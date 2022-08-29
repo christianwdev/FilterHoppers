@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -57,7 +58,7 @@ public class EditFilter implements Listener {
 
         if (filter == null) { return; }
 
-        if (e.getClick().isShiftClick()) {
+        if (e.getClick().isShiftClick() || e.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
             ChatUtil.sendMessage(e.getWhoClicked(), "&b&lFilter Hoppers » &7You are unable to shift click items in and out of filters.");
             e.setCancelled(true);
             return;
@@ -75,75 +76,7 @@ public class EditFilter implements Listener {
         if (slot >= 0 && slot <= 45 && slot != 13) {
 
             if (slot >= 29 && slot <= 33) {
-                int relativeSlot = slot - 29;
-
-                ItemStack cursor = e.getCursor();
-                e.setCancelled(true);
-
-                if (cursor != null && cursor.getType() != Material.AIR && cursor.getType() != filter.getFiltered()) {
-                    ChatUtil.sendMessage(e.getWhoClicked(), "&b&lFilter Hoppers » &7You can only place items of the same type in the filter.");
-                    return;
-                }
-
-                Inventory hopperInv = filter.getHopper().getInventory();
-                ItemStack relativeItem = hopperInv.getItem(relativeSlot);
-
-                if (e.getClick().isLeftClick()) {
-                    if (relativeItem == null || relativeItem.getType() == Material.AIR) {
-                        hopperInv.setItem(relativeSlot, e.getCursor());
-                        e.getWhoClicked().setItemOnCursor(new ItemStack(Material.AIR));
-
-                        filter.updateHopperInventory();
-                        return;
-                    }
-
-                    if (cursor == null || cursor.getType() == Material.AIR) {
-                        e.getWhoClicked().setItemOnCursor(relativeItem);
-                        hopperInv.setItem(relativeSlot, new ItemStack(Material.AIR, 1));
-
-                        filter.updateHopperInventory();
-                        return;
-                    }
-
-                    int maxAllowed = filter.getFiltered().getMaxStackSize() - hopperInv.getItem(relativeSlot).getAmount();
-                    int howMuchToAdd = Math.min(maxAllowed, cursor.getAmount());
-
-                    relativeItem.setAmount(relativeItem.getAmount() + howMuchToAdd);
-                    hopperInv.setItem(relativeSlot, relativeItem);
-
-                    cursor.setAmount(cursor.getAmount() - howMuchToAdd);
-                    e.getWhoClicked().setItemOnCursor(cursor);
-
-                    filter.updateHopperInventory();
-                    return;
-                }
-
-                if (e.getClick().isRightClick()) {
-                    if (relativeItem == null || relativeItem.getType() == Material.AIR) { return; }
-                    if (cursor == null || cursor.getType() == Material.AIR) {
-
-                        int userReceives = (int) Math.ceil(relativeItem.getAmount() / 2);
-
-                        e.getWhoClicked().setItemOnCursor(new ItemStack(relativeItem.getType(), userReceives));
-                        relativeItem.setAmount(relativeItem.getAmount() - userReceives);
-
-                        filter.updateHopperInventory();
-                        return;
-                    }
-
-                    if (relativeItem.getMaxStackSize() == relativeItem.getAmount()) { return; }
-
-                    relativeItem.setAmount(relativeItem.getAmount() + 1);
-                    hopperInv.setItem(relativeSlot, relativeItem);
-
-                    cursor.setAmount(cursor.getAmount() - 1);
-                    e.getWhoClicked().setItemOnCursor(cursor);
-
-                    filter.updateHopperInventory();
-                    return;
-                }
-
-                return;
+                handleHopperSlots(e, filter);
             }
 
             e.setCancelled(true); return;
@@ -166,4 +99,27 @@ public class EditFilter implements Listener {
         }
     }
 
+    /*
+        Since we'd have to create our own inventory management system otherwise, we'll let the users
+        edit our fake hopper inventory and mirror it accordingly to the hopper, like how we mirror
+        the hopper to our fake inventory.
+    */
+    public void handleHopperSlots(InventoryClickEvent e, HopperFilter filter) {
+
+        ItemStack cursor = e.getCursor();
+
+        if (cursor != null && cursor.getType() != Material.AIR && cursor.getType() != filter.getFiltered()) {
+            e.setCancelled(true);
+            ChatUtil.sendMessage(e.getWhoClicked(), "&b&lFilter Hoppers » &7You can only place items of the same type in the filter.");
+            return;
+        }
+
+        Inventory hopperInv = filter.getHopper().getInventory();
+
+        for (int i = 0; i < 5; i ++) {
+            hopperInv.setItem(i, e.getInventory().getItem(i + 29));
+        }
+
+        filter.updateHopperInventory();
+    }
 }
