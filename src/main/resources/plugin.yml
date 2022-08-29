@@ -1,0 +1,13 @@
+name: FilterHoppers
+author: Emile2250
+version: 0.1
+main: com.Emile2250.FilterHoppers
+api-version: 1.19
+authors: [ christianwdev ]
+prefix: FH
+depend: [NBTAPI]
+
+commands:
+  filterhoppersadmin:
+    description: Admin label for Filter Hoppers
+    aliases: [ fha, filterhoppersa ]
