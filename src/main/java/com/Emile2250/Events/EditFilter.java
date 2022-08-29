@@ -77,6 +77,7 @@ public class EditFilter implements Listener {
 
             if (slot >= 29 && slot <= 33) {
                 handleHopperSlots(e, filter);
+                return;
             }
 
             e.setCancelled(true); return;
