@@ -15,38 +15,21 @@ public class HopperFilter {
     private Material filtered;
     private Location location;
     private Inventory inventory;
-    private Hopper hopper;
 
     public HopperFilter(Location location, Material filtered) {
         this.location = location;
         this.filtered = filtered;
 
-        hopper = (Hopper) location.getBlock().getState();
-
         // Create ItemFilter inventory
-        Inventory inv = Bukkit.createInventory(null, 45, "Filter");
+        Inventory inv = Bukkit.createInventory(null, 27, "Filter");
 
         for (int i = 0; i < inv.getSize(); i++) {
-
-            if (i >= 29 && i <= 33) { continue; }
-
             inv.setItem(i, new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1));
         }
 
         inv.setItem(13, new ItemStack(filtered, 1));
 
         this.inventory = inv;
-        updateHopperInventory();
-    }
-
-    public void updateHopperInventory() {
-        for (int i = 0; i < hopper.getInventory().getSize(); i++) {
-            inventory.setItem(i + 29, hopper.getInventory().getItem(i));
-        }
-    }
-
-    public Hopper getHopper() {
-        return hopper;
     }
 
     public Inventory getInventory() {

@@ -26,8 +26,7 @@ public class MoveItemsHopper implements Listener {
 
         if (loc == null) { return; } // Not a placed inventory, ie not our filters.
 
-        String key = Converters.LocationToString(loc);
-        HopperFilter filter = FilterHoppers.getInstance().getFilters().get(key);
+        HopperFilter filter = getFilter(loc);
 
         if (filter == null) { return; }
 
@@ -39,26 +38,50 @@ public class MoveItemsHopper implements Listener {
             if (data instanceof Directional) {
                 Directional directional = (Directional) data;
                 Block relative = block.getRelative(directional.getFacing());
+                Block down = block.getRelative(BlockFace.DOWN);
 
-                if (relative.getType() == Material.HOPPER) {
-
-                    Hopper hopper = (Hopper) relative;
-                    Inventory hopperInv = hopper.getInventory();
-                    ItemStack maxItems = getMaximumItems(e.getItem(), hopperInv);
-
-                    hopperInv.addItem(maxItems);
-                    e.getSource().remove(maxItems);
-
+                if (relative.getLocation() != filter.getLocation()) {
+                    if (foundOpenInventory(e, relative)) { e.setCancelled(true); return; }
                 }
+
+                if (down.getLocation() != filter.getLocation()) {
+                    if (foundOpenInventory(e, down)) { e.setCancelled(true); return; }
+                }
+
             }
 
             e.setCancelled(true);
             return;
         }
-
-        filter.updateHopperInventory();
-
     }
+
+    public boolean foundOpenInventory(InventoryMoveItemEvent e, Block relative) {
+
+        if (relative.getType() == Material.HOPPER) {
+
+            HopperFilter relativeFilter = getFilter(relative);
+            if (relativeFilter != null && relativeFilter.getFiltered() != e.getItem().getType()) { return false; } // No where to go!
+
+            Hopper hopper = (Hopper) relative.getState();
+            Inventory hopperInv = hopper.getInventory();
+            ItemStack maxItems = getMaximumItems(e.getItem(), hopperInv);
+
+            hopperInv.addItem(maxItems);
+            e.getSource().remove(maxItems);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public HopperFilter getFilter(Block block) {
+        return FilterHoppers.getInstance().getFilters().get(Converters.LocationToString(block.getLocation()));
+    }
+    public HopperFilter getFilter(Location loc) {
+        return FilterHoppers.getInstance().getFilters().get(Converters.LocationToString(loc));
+    }
+
 
     @EventHandler
     public void MoveOutOfHopper(InventoryMoveItemEvent e) {
@@ -71,8 +94,6 @@ public class MoveItemsHopper implements Listener {
         HopperFilter filter = FilterHoppers.getInstance().getFilters().get(key);
 
         if (filter == null) { return; }
-
-        filter.updateHopperInventory();
 
     }
 
@@ -93,8 +114,6 @@ public class MoveItemsHopper implements Listener {
             return;
         }
 
-        filter.updateHopperInventory();
-
     }
 
     public ItemStack getMaximumItems(ItemStack item, Inventory inv) {
@@ -104,6 +123,8 @@ public class MoveItemsHopper implements Listener {
 
         int amountOfSpace = 0;
         for (ItemStack slot : inv.getContents()) { // Find how many open slots there are open if any.
+            if (slot == null) { return item; }
+
             if (item.getType() == slot.getType()) {
                 amountOfSpace += slot.getMaxStackSize() - slot.getAmount();
             }

@@ -18,14 +18,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class PlaceHopper implements Listener {
 
-    /*
-        DISABLE HOPPERS IN GENERAL BUT WE NEED TO ENABLE TO USE MOVEITEMEVENT
-        org.bukkit.block.data.type.Hopper data = (org.bukkit.block.data.type.Hopper) e.getBlock().getBlockData();
-        data.setEnabled(false);
-        e.getBlock().setBlockData(data);
-        e.getBlock().getState().update();
-     */
-
     @EventHandler
     public void BlockPlaceEvent(BlockPlaceEvent e) {
         if (e.getBlock().getType() == Material.HOPPER) {
